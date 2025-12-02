@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { COLLECTIONS, Product, Account } from '../types';
 import { getData, addData, updateData, deleteData } from '../services/firestoreService';
 import Modal from '../components/Modal';
+import ExportMenu from '../components/ExportMenu';
 import { Plus, Trash2, Link as LinkIcon, ExternalLink, Edit2, Search } from 'lucide-react';
 
 const Products: React.FC = () => {
@@ -11,7 +13,6 @@ const Products: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // State untuk mode edit
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -50,10 +51,8 @@ const Products: React.FC = () => {
 
     try {
       if (editingId) {
-        // Mode Update
         await updateData(COLLECTIONS.PRODUCTS, editingId, payload);
       } else {
-        // Mode Create
         await addData(COLLECTIONS.PRODUCTS, payload);
       }
       handleCloseModal();
@@ -95,23 +94,24 @@ const Products: React.FC = () => {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Manajemen Produk</h2>
-          <p className="text-sm text-gray-500">Kelola link produk affiliasi per akun media sosial</p>
+          <h2 className="text-2xl font-bold text-slate-100">Manajemen Produk</h2>
+          <p className="text-sm text-slate-500">Kelola link produk affiliasi per akun media sosial</p>
         </div>
-        <div className="flex gap-4 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
              <input 
                type="text" 
                placeholder="Cari produk..." 
-               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+               className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
              />
           </div>
+          <ExportMenu data={filteredProducts} filename="data-produk" />
           <button 
             onClick={() => setIsModalOpen(true)} 
-            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            className="flex items-center justify-center gap-2 bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-500 transition-colors shadow-lg shadow-amber-900/20"
           >
             <Plus size={20} />
             <span>Tambah</span>
@@ -119,51 +119,51 @@ const Products: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-slate-900 rounded-xl border border-slate-800 shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 border-b border-gray-200">
+          <table className="w-full text-left text-sm text-slate-400">
+            <thead className="bg-slate-950 border-b border-slate-800">
               <tr>
-                <th className="px-6 py-4 font-semibold text-gray-900">Nama Produk</th>
-                <th className="px-6 py-4 font-semibold text-gray-900">Akun Media</th>
-                <th className="px-6 py-4 font-semibold text-gray-900">Link Produk</th>
+                <th className="px-6 py-4 font-semibold text-slate-200">Nama Produk</th>
+                <th className="px-6 py-4 font-semibold text-slate-200">Akun Media</th>
+                <th className="px-6 py-4 font-semibold text-slate-200">Link Produk</th>
                 <th className="px-6 py-4 font-semibold text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? <tr><td colSpan={4} className="p-4 text-center">Loading...</td></tr> : 
-               filteredProducts.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-gray-400">Belum ada data produk.</td></tr> :
+            <tbody className="divide-y divide-slate-800">
+              {loading ? <tr><td colSpan={4} className="p-4 text-center text-amber-500">Loading...</td></tr> : 
+               filteredProducts.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-600">Belum ada data produk.</td></tr> :
                filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900">{product.name}</td>
+                <tr key={product.id} className="hover:bg-slate-800/50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-200">{product.name}</td>
                   <td className="px-6 py-4">
-                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs font-medium border border-blue-100">
+                    <span className="bg-slate-800 text-amber-500 px-2 py-1 rounded-md text-xs font-medium border border-slate-700">
                       {product.accountName}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     {product.link ? (
-                      <a href={product.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline">
+                      <a href={product.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-400 hover:text-blue-300 hover:underline">
                         <LinkIcon size={14} />
                         <span className="truncate max-w-[200px]">{product.link}</span>
                         <ExternalLink size={12} />
                       </a>
                     ) : (
-                      <span className="text-gray-400 italic">Tidak ada link</span>
+                      <span className="text-slate-600 italic">Tidak ada link</span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button 
                         onClick={() => handleEdit(product)} 
-                        className="text-blue-500 hover:text-blue-700 transition-colors p-2 rounded-full hover:bg-blue-50"
+                        className="text-blue-400 hover:text-blue-300 transition-colors p-2 rounded-full hover:bg-blue-900/20"
                         title="Edit Produk"
                       >
                         <Edit2 size={18} />
                       </button>
                       <button 
                         onClick={() => handleDelete(product.id)} 
-                        className="text-red-500 hover:text-red-700 transition-colors p-2 rounded-full hover:bg-red-50"
+                        className="text-red-400 hover:text-red-300 transition-colors p-2 rounded-full hover:bg-red-900/20"
                         title="Hapus Produk"
                       >
                         <Trash2 size={18} />
@@ -184,10 +184,10 @@ const Products: React.FC = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Pilih Akun Media</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Pilih Akun Media</label>
             <select 
               required 
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
               value={formData.accountId} 
               onChange={(e) => setFormData({...formData, accountId: e.target.value})}
             >
@@ -200,23 +200,23 @@ const Products: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Produk</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Nama Produk</label>
             <input 
               type="text" 
               required 
               placeholder="Contoh: Kemeja Flannel Merah"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
               value={formData.name} 
               onChange={(e) => setFormData({...formData, name: e.target.value})} 
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Link Produk</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Link Produk</label>
             <input 
               type="url" 
               required 
               placeholder="https://shopee.co.id/..."
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
               value={formData.link} 
               onChange={(e) => setFormData({...formData, link: e.target.value})} 
             />
@@ -226,13 +226,13 @@ const Products: React.FC = () => {
             <button 
               type="button"
               onClick={handleCloseModal}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-slate-700 text-slate-300 rounded-lg hover:bg-slate-800 transition-colors"
             >
               Batal
             </button>
             <button 
               type="submit" 
-              className="flex-1 bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+              className="flex-1 bg-amber-600 text-white font-medium py-2 rounded-lg hover:bg-amber-500 transition-colors shadow-lg shadow-amber-900/20"
             >
               {editingId ? 'Update Produk' : 'Simpan Produk'}
             </button>
