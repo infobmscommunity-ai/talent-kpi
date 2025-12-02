@@ -1,0 +1,227 @@
+import React, { useEffect, useState } from 'react';
+import { COLLECTIONS, Account, Talent } from '../types';
+import { getData, addData, updateData, deleteData } from '../services/firestoreService';
+import Modal from '../components/Modal';
+import { Plus, Trash2, Smartphone, AtSign, Edit2 } from 'lucide-react';
+
+const Accounts: React.FC = () => {
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [talents, setTalents] = useState<Talent[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // State untuk mode edit
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
+    talentId: '',
+    platform: 'Instagram' as 'Instagram' | 'TikTok' | 'YouTube' | 'Shopee Video',
+    username: '',
+    followers: 0
+  });
+
+  const fetchData = async () => {
+    try {
+      const [accData, talData] = await Promise.all([
+        getData<Account>(COLLECTIONS.ACCOUNTS),
+        getData<Talent>(COLLECTIONS.TALENTS)
+      ]);
+      setAccounts(accData);
+      setTalents(talData);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const selectedTalent = talents.find(t => t.id === formData.talentId);
+    
+    const dataPayload = {
+      ...formData,
+      talentName: selectedTalent?.name || 'Unknown'
+    };
+
+    try {
+      if (editingId) {
+        // Mode Update
+        await updateData(COLLECTIONS.ACCOUNTS, editingId, dataPayload);
+      } else {
+        // Mode Create
+        await addData(COLLECTIONS.ACCOUNTS, dataPayload);
+      }
+      handleCloseModal();
+      fetchData();
+    } catch (error) {
+      console.error("Error saving account:", error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus akun ini?')) {
+      await deleteData(COLLECTIONS.ACCOUNTS, id);
+      fetchData();
+    }
+  };
+
+  const handleEdit = (account: Account) => {
+    setEditingId(account.id);
+    setFormData({
+      talentId: account.talentId,
+      platform: account.platform,
+      username: account.username,
+      followers: account.followers
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+    setFormData({ talentId: '', platform: 'Instagram', username: '', followers: 0 });
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Manajemen Akun Media</h2>
+          <p className="text-sm text-gray-500">Kelola akun sosial media milik talent</p>
+        </div>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+        >
+          <Plus size={20} />
+          <span>Tambah Akun</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? <p className="col-span-3 text-center py-8">Loading data...</p> : 
+         accounts.length === 0 ? <p className="col-span-3 text-center py-8 text-gray-400">Belum ada data akun.</p> :
+         accounts.map((account) => (
+          <div key={account.id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                <Smartphone size={24} />
+              </div>
+              <div className="flex gap-1">
+                <button 
+                  onClick={() => handleEdit(account)} 
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
+                  title="Edit Akun"
+                >
+                  <Edit2 size={18} />
+                </button>
+                <button 
+                  onClick={() => handleDelete(account.id)} 
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                  title="Hapus Akun"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-1 overflow-hidden text-ellipsis">
+              <AtSign size={16} className="text-gray-400 shrink-0"/>
+              <span className="truncate">{account.username}</span>
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">{account.platform}</p>
+            
+            <div className="pt-4 border-t border-gray-50 flex justify-between items-center">
+              <span className="text-xs font-medium text-gray-500">Milik Talent</span>
+              <span className="text-sm font-semibold text-gray-800 truncate max-w-[120px]" title={account.talentName}>
+                {account.talentName}
+              </span>
+            </div>
+            <div className="mt-2 flex justify-between items-center">
+               <span className="text-xs font-medium text-gray-500">Followers</span>
+               <span className="text-sm font-semibold text-gray-800">{Number(account.followers).toLocaleString()}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal} 
+        title={editingId ? "Edit Akun Media" : "Tambah Akun Baru"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Pilih Talent</label>
+            <select 
+              required
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.talentId}
+              onChange={(e) => setFormData({...formData, talentId: e.target.value})}
+            >
+              <option value="">-- Pilih Talent --</option>
+              {talents.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
+            <select 
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.platform}
+              onChange={(e) => setFormData({...formData, platform: e.target.value as any})}
+            >
+              <option value="Instagram">Instagram</option>
+              <option value="TikTok">TikTok</option>
+              <option value="YouTube">YouTube</option>
+              <option value="Shopee Video">Shopee Video</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username (tanpa @)</label>
+            <input 
+              required
+              type="text" 
+              placeholder="username_akun"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.username}
+              onChange={(e) => setFormData({...formData, username: e.target.value})}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Followers</label>
+            <input 
+              required
+              type="number" 
+              min="0"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.followers}
+              onChange={(e) => setFormData({...formData, followers: Number(e.target.value)})}
+            />
+          </div>
+          
+          <div className="pt-4 flex gap-3">
+            <button 
+              type="button"
+              onClick={handleCloseModal}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Batal
+            </button>
+            <button 
+              type="submit" 
+              className="flex-1 bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            >
+              {editingId ? 'Update Akun' : 'Simpan Akun'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+};
+
+export default Accounts;
